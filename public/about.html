@@ -1,0 +1,696 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="The Pile — swipe through Magic: The Gathering cards Tinder-style. Filter with Scryfall, keep the good ones, export your pile. No accounts, no tracking.">
+<meta name="theme-color" content="#101114">
+<link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
+<title>The Pile — swipe through Magic cards</title>
+<style>
+  :root {
+    --bg: #101114;
+    --bg-raised: #191b20;
+    --bg-input: #1f2229;
+    --border: #2b2f38;
+    --text: #eceef2;
+    --dim: #9aa1ad;
+    --accent: #f5a524;
+    --accent-ink: #241a05;
+    --keep: #34d27b;
+    --pass: #f45b69;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', 'Helvetica Neue', Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 1020px; margin: 0 auto; padding: 0 24px; }
+
+  /* ---- Hero ---- */
+  .hero {
+    position: relative;
+    padding: 72px 0 40px;
+    background:
+      radial-gradient(ellipse 900px 520px at 70% -10%, rgba(245, 165, 36, 0.13), transparent 60%),
+      radial-gradient(ellipse 700px 420px at 10% 0%, rgba(52, 210, 123, 0.06), transparent 60%);
+  }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 40px;
+    align-items: center;
+  }
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 26px;
+  }
+  .brand img { width: 46px; height: 46px; border-radius: 12px; }
+  .brand span { font-weight: 800; letter-spacing: -0.01em; font-size: 1.1rem; }
+  .badge-beta {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: rgba(245, 165, 36, 0.15);
+    border: 1px solid rgba(245, 165, 36, 0.4);
+    color: var(--accent);
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+  h1 {
+    font-size: clamp(2.1rem, 5.5vw, 3.4rem);
+    line-height: 1.12;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin-bottom: 18px;
+  }
+  h1 em {
+    font-style: normal;
+    background: linear-gradient(120deg, var(--accent), #ffd98a);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .lede {
+    color: var(--dim);
+    font-size: 1.08rem;
+    max-width: 46ch;
+    margin-bottom: 30px;
+  }
+  .cta-row { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 14px 26px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 1rem;
+    transition: transform 0.12s ease, box-shadow 0.2s ease;
+  }
+  .btn:hover { text-decoration: none; transform: translateY(-1px); }
+  .btn-primary {
+    background: var(--accent);
+    color: var(--accent-ink);
+    box-shadow: 0 8px 28px rgba(245, 165, 36, 0.28);
+  }
+  .btn-secondary {
+    border: 1px solid var(--border);
+    color: var(--text);
+    background: var(--bg-raised);
+  }
+  .cta-note { flex-basis: 100%; color: var(--dim); font-size: 0.83rem; }
+
+  /* ---- Phone mockup ---- */
+  .phone {
+    width: min(290px, 74vw);
+    aspect-ratio: 9 / 19;
+    margin: 0 auto;
+    border-radius: 42px;
+    border: 3px solid #34383f;
+    background: linear-gradient(180deg, #0c0d10, #101114);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6), inset 0 0 0 1px #000;
+    padding: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .phone::before {
+    content: "";
+    position: absolute;
+    top: 12px; left: 50%;
+    transform: translateX(-50%);
+    width: 34%; height: 16px;
+    background: #000;
+    border-radius: 10px;
+    z-index: 5;
+  }
+  .phone-screen {
+    position: absolute;
+    inset: 14px;
+    border-radius: 30px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .mock-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 34px 14px 8px;
+    font-size: 0.62rem;
+    color: var(--dim);
+  }
+  .mock-chip {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    padding: 3px 8px;
+    border-radius: 999px;
+    color: var(--text);
+    font-weight: 600;
+  }
+  .mock-chip b { color: var(--accent); }
+  .mock-stage { position: relative; flex: 1; }
+  .mock-card {
+    position: absolute;
+    left: 50%; top: 46%;
+    width: 76%;
+    aspect-ratio: 63 / 88;
+    border-radius: 10px;
+    transform: translate(-50%, -50%);
+  }
+  .mock-card-back {
+    background: #191b20;
+    border: 1px solid var(--border);
+    transform: translate(-50%, -48%) scale(0.93);
+    animation: rise 5s ease-in-out infinite;
+  }
+  .mock-card-top {
+    background:
+      linear-gradient(180deg, #d8cba4 0%, #d8cba4 12%, #4a5568 12%, #2d3748 46%, #d8cba4 46%, #d8cba4 54%, #efe9d5 54%, #efe9d5 92%, #cbbd93 92%);
+    border: 6px solid #17181c;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55);
+    animation: swipe-loop 5s ease-in-out infinite;
+  }
+  .mock-stamp {
+    position: absolute;
+    top: 9%; left: 7%;
+    padding: 3px 9px;
+    border: 2.5px solid var(--keep);
+    border-radius: 6px;
+    color: var(--keep);
+    font-weight: 900;
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    transform: rotate(-14deg);
+    opacity: 0;
+    animation: stamp-loop 5s ease-in-out infinite;
+  }
+  .mock-actions {
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+    padding: 10px 0 22px;
+  }
+  .mock-btn {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    background: var(--bg-raised);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800;
+    font-size: 1rem;
+  }
+  .mock-btn.pass { color: var(--pass); border-color: rgba(244, 91, 105, 0.5); }
+  .mock-btn.undo { color: var(--dim); width: 34px; height: 34px; font-size: 0.85rem; margin-top: 3px; }
+  .mock-btn.keep { color: var(--keep); border-color: rgba(52, 210, 123, 0.5); }
+  @keyframes swipe-loop {
+    0%, 38%  { transform: translate(-50%, -50%) rotate(0deg); }
+    48%      { transform: translate(-38%, -52%) rotate(7deg); }
+    62%, 74% { transform: translate(90%, -66%) rotate(26deg); opacity: 1; }
+    75%      { opacity: 0; }
+    76%      { transform: translate(-50%, -50%) rotate(0deg); opacity: 0; }
+    82%, 100%{ transform: translate(-50%, -50%) rotate(0deg); opacity: 1; }
+  }
+  @keyframes stamp-loop {
+    0%, 40% { opacity: 0; }
+    50%, 73% { opacity: 1; }
+    74%, 100% { opacity: 0; }
+  }
+  @keyframes rise {
+    0%, 45% { transform: translate(-50%, -48%) scale(0.93); }
+    70%, 100% { transform: translate(-50%, -50%) scale(1); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mock-card-top, .mock-card-back, .mock-stamp { animation: none; }
+    .mock-stamp { opacity: 1; }
+  }
+
+  /* ---- Sections ---- */
+  section { padding: 64px 0; }
+  .kicker {
+    font-size: 0.76rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+  h2 {
+    font-size: clamp(1.5rem, 3.4vw, 2.1rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: 14px;
+  }
+  .section-lede { color: var(--dim); max-width: 62ch; margin-bottom: 36px; }
+
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+    gap: 16px;
+  }
+  .feature {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 22px;
+    transition: border-color 0.2s;
+  }
+  .feature:hover { border-color: #3d4250; }
+  .feature-icon {
+    width: 42px; height: 42px;
+    border-radius: 12px;
+    background: rgba(245, 165, 36, 0.12);
+    color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 14px;
+  }
+  .feature-icon svg { width: 22px; height: 22px; }
+  .feature h3 { font-size: 1.02rem; font-weight: 700; margin-bottom: 6px; }
+  .feature p { color: var(--dim); font-size: 0.9rem; }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    counter-reset: step;
+  }
+  .step {
+    position: relative;
+    background: linear-gradient(160deg, var(--bg-raised), #15171b);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 26px 22px 22px;
+  }
+  .step::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    top: -14px; left: 20px;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 800;
+    font-size: 0.9rem;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 14px rgba(245, 165, 36, 0.35);
+  }
+  .step h3 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+  .step p { color: var(--dim); font-size: 0.9rem; }
+  .step code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.8em;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 1px 6px;
+    color: var(--text);
+  }
+
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .control-card {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 22px;
+  }
+  .control-card h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 14px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.76rem; }
+  .control-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    padding: 9px 0;
+    border-bottom: 1px solid #22252c;
+    font-size: 0.92rem;
+  }
+  .control-row:last-child { border-bottom: none; }
+  .control-row span:last-child { color: var(--dim); text-align: right; }
+  kbd {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-bottom-width: 2px;
+    border-radius: 6px;
+    padding: 2px 8px;
+    white-space: nowrap;
+  }
+  .gesture { font-weight: 700; white-space: nowrap; }
+  .gesture.keep { color: var(--keep); }
+  .gesture.pass { color: var(--pass); }
+
+  .privacy {
+    background: linear-gradient(160deg, rgba(52, 210, 123, 0.07), transparent 55%);
+    border: 1px solid rgba(52, 210, 123, 0.25);
+    border-radius: 22px;
+    padding: 34px 30px;
+  }
+  .privacy h2 { display: flex; align-items: center; gap: 12px; }
+  .privacy ul { list-style: none; margin-top: 18px; display: grid; gap: 10px; }
+  .privacy li { color: var(--dim); padding-left: 28px; position: relative; font-size: 0.95rem; }
+  .privacy li::before {
+    content: "✓";
+    position: absolute; left: 0;
+    color: var(--keep);
+    font-weight: 800;
+  }
+  .privacy li strong { color: var(--text); font-weight: 600; }
+
+  /* ---- Install ---- */
+  .install-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .install-card {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 24px;
+  }
+  .install-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .install-icon {
+    width: 38px; height: 38px;
+    border-radius: 11px;
+    background: rgba(245, 165, 36, 0.12);
+    color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .install-icon svg { width: 20px; height: 20px; }
+  .install-head h3 { font-size: 1rem; font-weight: 700; }
+  .install-card ol {
+    list-style: none;
+    counter-reset: inst;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .install-card li {
+    counter-increment: inst;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 0.9rem;
+    color: var(--dim);
+  }
+  .install-card li::before { margin-top: 1px; }
+  .install-card li::before {
+    content: counter(inst);
+    flex-shrink: 0;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 0.72rem;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .install-card li strong { color: var(--text); font-weight: 600; }
+  .install-note {
+    margin-top: 18px;
+    font-size: 0.82rem;
+    color: var(--dim);
+  }
+
+  /* ---- Notice box (about this project) ---- */
+  .notice-box {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 18px;
+    padding: 30px 30px;
+  }
+  .notice-box ul { list-style: none; margin-top: 18px; display: grid; gap: 10px; }
+  .notice-box li { color: var(--dim); padding-left: 28px; position: relative; font-size: 0.95rem; }
+  .notice-box li::before {
+    content: "•";
+    position: absolute; left: 6px;
+    color: var(--accent);
+    font-weight: 800;
+  }
+  .notice-box li strong { color: var(--text); font-weight: 600; }
+
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 36px 0 46px;
+    color: #6a7280;
+    font-size: 0.82rem;
+    line-height: 1.7;
+  }
+  footer a { color: #8b93a1; }
+  .foot-cta { margin-bottom: 18px; }
+
+  @media (max-width: 780px) {
+    .hero { padding-top: 48px; }
+    .hero-grid { grid-template-columns: 1fr; gap: 48px; }
+    section { padding: 48px 0; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="brand">
+        <img src="./icons/icon.svg" alt="" width="46" height="46">
+        <span>The Pile</span>
+        <span class="badge-beta">Beta</span>
+      </div>
+      <h1>Swipe through Magic cards.<br><em>Keep the good ones.</em></h1>
+      <p class="lede">
+        Like physically sorting a stack of cards into a keep pile — but for all of
+        Magic: The Gathering. Filter anything Scryfall can find, swipe right to pile it,
+        left to pass, and export your picks to wherever your decks live.
+      </p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="./">
+          Open The Pile
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+        <a class="btn btn-secondary" href="#how">How it works</a>
+        <span class="cta-note">Free · no account · runs entirely in your browser · installable as an app</span>
+      </div>
+    </div>
+
+    <div class="phone" aria-hidden="true">
+      <div class="phone-screen">
+        <div class="mock-head">
+          <span>128 / 11 222</span>
+          <span class="mock-chip">The Pile <b>41</b></span>
+        </div>
+        <div class="mock-stage">
+          <div class="mock-card mock-card-back"></div>
+          <div class="mock-card mock-card-top">
+            <div class="mock-stamp">PILE</div>
+          </div>
+        </div>
+        <div class="mock-actions">
+          <div class="mock-btn pass">✕</div>
+          <div class="mock-btn undo">↶</div>
+          <div class="mock-btn keep">＋</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="features">
+  <div class="wrap">
+    <p class="kicker">What it does</p>
+    <h2>A card sorter that feels like holding the cards</h2>
+    <p class="section-lede">
+      Every card is shown at full size, perfectly readable — like holding a real card in
+      your hand. Everything else stays out of the way until you need it.
+    </p>
+    <div class="feature-grid">
+      <div class="feature">
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="4" width="11" height="16" rx="2" transform="rotate(6 12.5 12)"/><path d="M6.5 6.8 5 7.3a2 2 0 0 0-1.2 2.6l3 8.2"/></svg></div>
+        <h3>Tinder-style swiping</h3>
+        <p>Drag, flick, tap buttons, or use arrow keys. Right adds to your pile, left passes. Misswiped? Undo takes any number of steps back.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></div>
+        <h3>Scryfall-powered filters</h3>
+        <p>Name, rules text, colors, rarity, set, format, price — or drop straight into raw Scryfall syntax. Presets like “Downshifted to common” get you swiping in one tap.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 13 9 5 9-5"/></svg></div>
+        <h3>Multiple named piles</h3>
+        <p>“Deck ideas”, “Trade binder”, “Maybe”. Switch the target pile mid-swipe, and re-swipe any pile later to cut it down or move cards between piles.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 19h16"/></svg></div>
+        <h3>Export anywhere</h3>
+        <p>Plain text, CSV, or JSON — default is one card name per line, ready for any deckbuilder. Pick exactly which attributes come along.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>
+        <h3>Private by design</h3>
+        <p>No backend, no account, no analytics. Your piles and sessions live in your browser's storage and never leave your device.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M10 18.5h4"/></svg></div>
+        <h3>Installable app</h3>
+        <p>Add it to your home screen and it opens full-screen like a native app, with the interface and recent card images cached for shaky connections.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <p class="kicker">How it works</p>
+    <h2>Three steps from “too many cards” to a tidy list</h2>
+    <div class="steps" style="margin-top: 34px;">
+      <div class="step">
+        <h3>Filter</h3>
+        <p>Pick a preset — the newest set, budget rares, fresh Pauper downshifts — or build your own filter, down to raw Scryfall queries like <code>f:pauper o:"draw a card"</code>.</p>
+      </div>
+      <div class="step">
+        <h3>Swipe</h3>
+        <p>Go through the results one full-size card at a time. Right = into the pile, left = pass, undo if your thumb was faster than your brain. Your spot is saved — leave and resume any time within a week.</p>
+      </div>
+      <div class="step">
+        <h3>Export</h3>
+        <p>Copy or download your pile as text, CSV, or JSON. Re-swipe a pile any time for a second look, or split it into new piles.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="wrap">
+    <p class="kicker">Install</p>
+    <h2>Add it to your home screen</h2>
+    <p class="section-lede">
+      The Pile is a Progressive Web App — install it once and it opens full-screen like a
+      native app, with no app store required.
+    </p>
+    <div class="install-grid">
+      <div class="install-card">
+        <div class="install-head">
+          <div class="install-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M10 18.5h4"/></svg></div>
+          <h3>iPhone &amp; iPad (Safari)</h3>
+        </div>
+        <ol>
+          <li><span>Open The Pile in <strong>Safari</strong> — iOS only allows installing from Safari, not Chrome or other browsers.</span></li>
+          <li><span>Tap the <strong>Share</strong> icon (square with an arrow pointing up) in the toolbar.</span></li>
+          <li><span>Scroll down and tap <strong>“Add to Home Screen.”</strong></span></li>
+          <li><span>Tap <strong>“Add”</strong> in the top-right corner.</span></li>
+        </ol>
+        <p class="install-note">The Pile now sits on your home screen and opens full-screen, no address bar.</p>
+      </div>
+      <div class="install-card">
+        <div class="install-head">
+          <div class="install-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M8 6V4h8v2"/><circle cx="12" cy="13" r="3"/></svg></div>
+          <h3>Android (Chrome)</h3>
+        </div>
+        <ol>
+          <li><span>Open The Pile in <strong>Chrome</strong>.</span></li>
+          <li><span>Tap the <strong>⋮</strong> menu icon in the top-right corner.</span></li>
+          <li><span>Tap <strong>“Install app”</strong> (some versions show “Add to Home screen”).</span></li>
+          <li><span>Confirm with <strong>“Install.”</strong></span></li>
+        </ol>
+        <p class="install-note">Chrome may also show an install banner or icon in the address bar — either works.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="controls">
+  <div class="wrap">
+    <p class="kicker">Controls</p>
+    <h2>Fast with a thumb, faster with a keyboard</h2>
+    <div class="controls" style="margin-top: 30px;">
+      <div class="control-card">
+        <h3>Touch</h3>
+        <div class="control-row"><span class="gesture keep">Swipe right</span><span>Add card to the active pile</span></div>
+        <div class="control-row"><span class="gesture pass">Swipe left</span><span>Pass / cut the card</span></div>
+        <div class="control-row"><span class="gesture">Flick</span><span>Quick-commit a swipe</span></div>
+        <div class="control-row"><span class="gesture">↶ button</span><span>Undo the last swipe(s)</span></div>
+        <div class="control-row"><span class="gesture">⟳ button</span><span>Flip double-faced cards</span></div>
+      </div>
+      <div class="control-card">
+        <h3>Keyboard</h3>
+        <div class="control-row"><span><kbd>→</kbd></span><span>Add to pile</span></div>
+        <div class="control-row"><span><kbd>←</kbd></span><span>Pass</span></div>
+        <div class="control-row"><span><kbd>U</kbd> / <kbd>⌫</kbd></span><span>Undo</span></div>
+        <div class="control-row"><span><kbd>F</kbd></span><span>Flip double-faced cards</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="about-project">
+  <div class="wrap">
+    <div class="notice-box">
+      <p class="kicker">About this project</p>
+      <h2>A solo, AI-built hobby project</h2>
+      <ul>
+        <li><strong>Built with Claude Code.</strong> Nearly all of The Pile's code was written by Anthropic's AI coding agent, Claude Code, directed and reviewed by a single hobbyist. It is not the output of a company, studio, or professional development team.</li>
+        <li><strong>Private, unpaid, best-effort.</strong> This is a personal side project, not a product or business. There is no roadmap, no support desk, and no service-level agreement.</li>
+        <li><strong>No guarantee of maintenance.</strong> Features may change, break, or disappear without notice, and the project may be updated rarely, irregularly, or not at all.</li>
+        <li><strong>Provided as-is.</strong> The Pile is offered free of charge with no warranty of any kind, express or implied — including no guarantee of availability, correctness, or fitness for any particular purpose. Use it at your own discretion.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="privacy">
+  <div class="wrap">
+    <div class="privacy">
+      <p class="kicker">Privacy</p>
+      <h2>Just another frontend for Scryfall</h2>
+      <ul>
+        <li><strong>No backend.</strong> The Pile is a static page; the only server it ever talks to is the Scryfall API for card data and images.</li>
+        <li><strong>No account, no tracking.</strong> No sign-up, no cookies, no analytics, completely anonymous.</li>
+        <li><strong>Your data stays yours.</strong> Piles and swipe sessions are stored in your browser. Sessions expire after 7 days of inactivity; piles stay until you delete them.</li>
+        <li><strong>Open files, open format.</strong> Everything you keep can be exported as plain text, CSV, or JSON at any time.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p class="foot-cta"><a class="btn btn-primary" href="./">Start swiping →</a></p>
+    <p>
+      The Pile is unofficial Fan Content permitted under the
+      <a href="https://company.wizards.com/en/legal/fancontentpolicy" target="_blank" rel="noreferrer">Fan Content Policy</a>.
+      Not approved or endorsed by Wizards of the Coast. Portions of the materials used are property of
+      Wizards of the Coast. © Wizards of the Coast LLC.
+      Card data and images courtesy of <a href="https://scryfall.com" target="_blank" rel="noreferrer">Scryfall</a>.
+    </p>
+    <p style="margin-top: 12px;">
+      <a href="./legal.html#impressum">Legal notice (Impressum)</a> · <a href="./legal.html#privacy">Privacy policy (Datenschutz)</a>
+    </p>
+  </div>
+</footer>
+
+</body>
+</html>
