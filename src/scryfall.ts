@@ -1,4 +1,5 @@
 import type { CardMin, SetInfo } from './types';
+import { hasConsent } from './consent';
 
 const API = 'https://api.scryfall.com';
 
@@ -8,6 +9,9 @@ let chain: Promise<unknown> = Promise.resolve();
 let lastRequest = 0;
 
 function throttledFetch(url: string): Promise<Response> {
+  if (!hasConsent()) {
+    return Promise.reject(new Error('Scryfall requests are blocked until the notice is accepted.'));
+  }
   const p = chain.then(async () => {
     const wait = lastRequest + 110 - Date.now();
     if (wait > 0) await new Promise((r) => setTimeout(r, wait));
