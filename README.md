@@ -17,20 +17,6 @@ npm run preview    # serve the production build locally
 Deploy by putting `dist/` on any static host (GitHub Pages, Netlify, Cloudflare
 Pages, …). The build uses relative paths, so it works from a subdirectory too.
 
-## Deploying to GitHub Pages
-
-A workflow at `.github/workflows/deploy.yml` builds and deploys automatically
-on every push to `main`. One-time setup after pushing this repo to GitHub:
-
-1. Repo → **Settings → Pages → Source** → select **GitHub Actions**.
-2. Push to `main` (or run the workflow manually from the **Actions** tab).
-3. The deployed URL appears on the **Pages** settings page and in the
-   workflow's summary once it finishes.
-
-Before going live, fill in the placeholders in `public/legal.html` (Impressum
-requires a real name, address, and contact — see the warning banner at the
-top of that page) and remove its `<meta name="robots" content="noindex">`
-once it's ready to be indexed.
 
 ## Features
 
